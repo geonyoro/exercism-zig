@@ -25,6 +25,30 @@ A Staff Engineer evaluates `inline for` based on "Sustainable Simplicity":
 - Use **Standard `for`** for general data processing.
 - Use **`inline for`** for Metaprogramming (Tuples/Structs) or very small, performance-critical loops where values are known at compile-time.
 
+# Zig Learnings: Optionals & String Safety
+
+## 1. Optional Handling with `orelse`
+Zig uses optional types (`?T`) to represent values that might be null.
+- **The `orelse` Operator:** The most concise way to handle a null case is `optional_value orelse default_value`. 
+- **Type Safety:** Unlike C/Java, you cannot accidentally use a null pointer; the compiler forces you to unwrap the `?T` before accessing the underlying `T`.
+
+## 2. String Literals vs. Slices
+Strings in Zig are more nuanced than in other languages.
+- **Literal Type:** A literal like `"Alice"` is a pointer to a null-terminated array: `*const [5:0]u8`. The `:0` indicates the null terminator is part of the type.
+- **Peer Type Resolution (Coercion):** Zig automatically coerces these pointers-to-arrays into slices (`[]const u8`). This is why you can pass a string literal to a function expecting a slice.
+- **Memory Safety:** String literals are stored in the constant data section of the binary, meaning they have a global lifetime and are read-only.
+
+## 3. Sentinel-Terminated Arrays (`[N:V]T`)
+Zig supports arrays and slices with a "sentinel" value at the end.
+- **Syntax**: `[3:0]u8` defines an array of 3 elements plus a null (`0`) terminator. 
+- **Size**: The total memory footprint is `N + 1`. `@sizeOf([3:0]u8)` returns `4`.
+- **Use Case**: Primarily used for C compatibility (`[*:0]u8`) and ensuring safety when working with strings that require terminators.
+
+## 4. Mutability & `@constCast`
+- **Directional Safety**: You can always convert `[]u8` to `[]const u8`. The reverse is forbidden by default.
+- **The Escape Hatch**: `@constCast` can remove the `const` qualifier. 
+- **Staff Engineer Warning**: Use `@constCast` only when you are mathematically certain the underlying memory is mutable. Attempting to write to a "cast" string literal will result in a runtime crash (Segmentation Fault).
+
 # Zig Learnings: Explicit Types & Architectural Sovereignty
 
 ## 1. No Implicit Promotion
