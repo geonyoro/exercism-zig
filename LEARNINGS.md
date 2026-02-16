@@ -24,3 +24,10 @@ A Staff Engineer evaluates `inline for` based on "Sustainable Simplicity":
 ## 5. Rule of Thumb
 - Use **Standard `for`** for general data processing.
 - Use **`inline for`** for Metaprogramming (Tuples/Structs) or very small, performance-critical loops where values are known at compile-time.
+
+# Zig Learnings: Explicit Types & Architectural Sovereignty
+
+## 1. No Implicit Promotion
+Zig enforces a strict "no magic" policy for type conversions.
+- **`@as` vs. Transformations:** `@as(T, value)` is for **Coercion** (safe, lossless moves like `u8` to `u32`). It will fail if you try to cast an integer to a float.
+- **Explicit Built-ins:** Use `@floatFromInt(value)` or `@intFromFloat(value)` to bridge the gap between integer types (`usize`) and floating point types (`f64`). This forces the developer to acknowledge potential precision or range issues.
