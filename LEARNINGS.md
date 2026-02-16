@@ -49,6 +49,26 @@ Zig supports arrays and slices with a "sentinel" value at the end.
 - **The Escape Hatch**: `@constCast` can remove the `const` qualifier. 
 - **Staff Engineer Warning**: Use `@constCast` only when you are mathematically certain the underlying memory is mutable. Attempting to write to a "cast" string literal will result in a runtime crash (Segmentation Fault).
 
+# Zig Learnings: Memory Management & Safe Arithmetic
+
+## 1. The "Bank and Account" Model (Allocators)
+- **Allocators are Stateless**: A single `Allocator` instance can manage memory for multiple `ArrayList`s, `BitSet`s, or hash maps.
+- **Independence**: Each resource (like an `ArrayList`) tracks its own address and capacity. Allocators do not "mix" values; they simply provide distinct "rooms" (memory blocks) in the "hotel" (the heap).
+- **Ownership**: You must `deinit` the resource (the account) before you `deinit` the allocator (the bank).
+
+## 2. Dynamic vs. Static BitSets
+- **`std.bit_set.IntegerBitSet(N)`**: Used when the number of bits is known at compile-time. It is extremely fast as it usually maps to a primitive integer or a small array.
+- **`std.bit_set.DynamicBitSet`**: Used when the size depends on a runtime value (like a `limit` argument). It requires an `Allocator` and returns an error union (`!DynamicBitSet`) because the heap allocation can fail.
+
+## 3. Safe Integer Arithmetic
+- **The Overflow Trap**: In Zig, `a * b` or `a + b` occurs in the "space" of the operands' types. If `u32 * u32` exceeds 4.2 billion, it will wrap or crash *before* being assigned to a larger type (like `u64`).
+- **Explicit Casting**: Use `@as(u64, a) * b` to force the operation into a larger bit-width.
+- **`@addWithOverflow`**: A Staff Engineer favorite. It performs an addition and returns a boolean indicating if the result exceeded the type's capacity. This prevents crashes in Debug mode and infinite loops in Release mode when incrementing counters near the type limit.
+
+## 4. Defer and Error Unions
+- **`defer` Resilience**: Logic inside a `defer` block is guaranteed to run when the scope exits, even if the function returns early via `try` or a manual `return`.
+- **Initialization**: When a function returns an error union (like `initEmpty`), you must use `try` or `catch` immediately to access the underlying value. Failing to do so leaves you with the "box" rather than the tool.
+
 # Zig Learnings: Explicit Types & Architectural Sovereignty
 
 ## 1. No Implicit Promotion
